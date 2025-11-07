@@ -2,8 +2,6 @@ import cv2
 import numpy as np
 import time
 
-
-# -------------------- O(1) BOX FILTER via INTEGRAL --------------------
 def box_filter_integral(img: np.ndarray, radius: int) -> np.ndarray:
     """
     Tính trung bình vùng (2r+1)x(2r+1) bằng integral image với padding replicate.
@@ -38,8 +36,7 @@ def box_filter_integral(img: np.ndarray, radius: int) -> np.ndarray:
     return (S / area).astype(np.float32)
 
 
-# -------------------- PBFIC O(1) for GRAY --------------------
-def bilateral_pbf_ic_gray_O1(
+def bilateral_pbf_ic_gray(
     img: np.ndarray, radius: int = 5, sigma_r: float = 0.1, num_samples: int = 8
 ) -> np.ndarray:
     """
@@ -91,23 +88,21 @@ def bilateral_pbf_ic_gray_O1(
     return np.clip(I_res * 255.0, 0, 255).astype(np.uint8)
 
 
-# -------------------- TEST --------------------
 if __name__ == "__main__":
     path = "image/anh1.png"
     img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
     if img is None:
         raise FileNotFoundError("Không tìm thấy file ảnh")
 
-    # Kiểm tra O(1): thời gian gần như không đổi khi tăng radius
     for r in [3, 5, 9, 15, 25]:
         t0 = time.perf_counter()
-        _ = bilateral_pbf_ic_gray_O1(img, radius=r, sigma_r=0.1, num_samples=8)
+        _ = bilateral_pbf_ic_gray(img, radius=r, sigma_r=0.1, num_samples=8)
         t1 = time.perf_counter()
         print(f"radius={r}: {t1 - t0:.3f}s")
 
-    # So sánh chất lượng với OpenCV bilateral (tuỳ chọn)
+    # So sánh chất lượng với OpenCV bilateral
     I_ref = cv2.bilateralFilter(img, d=15, sigmaColor=25, sigmaSpace=5)
-    I_pbf = bilateral_pbf_ic_gray_O1(img, radius=5, sigma_r=25 / 255.0, num_samples=8)
+    I_pbf = bilateral_pbf_ic_gray(img, radius=5, sigma_r=25 / 255.0, num_samples=8)
     psnr = cv2.PSNR(I_ref, I_pbf)
     print(f"PSNR vs OpenCV = {psnr:.2f} dB")
     
